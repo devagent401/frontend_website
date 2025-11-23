@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 import { NAVBAR_CONFIG } from './JsonNavbarCategory';
+import { useCategories } from '@/hooks/useCategories';
+import { Category as ApiCategory } from '@/types/api';
 
 interface CategoryDropdownProps {
     variant: 'desktop' | 'mobile' | 'bottom-nav';
@@ -18,6 +20,34 @@ interface CategoryDropdownProps {
     className?: string;
 }
 
+// Adapter to convert API category to UI format
+const adaptCategoryForUI = (apiCategory: ApiCategory) => {
+    // Helper to get absolute image URL
+    const getImageUrl = (url?: string) => {
+        if (!url) return '/category/image1.png';
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('/')) {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+            const baseUrl = apiUrl.replace('/api/v1', '');
+            return `${baseUrl}${url}`;
+        }
+        return url;
+    };
+
+    return {
+        id: apiCategory._id,
+        title: apiCategory.name,
+        href: `/shop?category=${apiCategory.slug}`,
+        image_url: getImageUrl(apiCategory.image),
+        subcategories: apiCategory.children?.map(sub => ({
+            id: sub._id,
+            title: sub.name,
+            href: `/shop?category=${sub.slug}`,
+            items: sub.children?.map(child => child.name) || []
+        })) || []
+    };
+};
+
 export default function CategoryDropdown({
     variant,
     isOpen,
@@ -29,7 +59,15 @@ export default function CategoryDropdown({
     onCategoryExpand,
     className = ''
 }: CategoryDropdownProps) {
-    const categories = NAVBAR_CONFIG.categories;
+    // Fetch categories from backend (tree structure with children)
+    const { data: categoriesData, isLoading } = useCategories({ 
+        status: 'active'
+        // Don't add parent filter - API returns tree structure by default
+    });
+    
+    // Use API categories if available, fallback to static config
+    const apiCategories = categoriesData?.data?.map(adaptCategoryForUI) || [];
+    const categories = apiCategories.length > 0 ? apiCategories : NAVBAR_CONFIG.categories;
 
     const isCategoryExpanded = (categoryId: string) => expandedCategories.includes(categoryId);
 

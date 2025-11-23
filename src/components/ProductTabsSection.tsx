@@ -2,9 +2,13 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useProducts } from "@/hooks/useProducts";
+import { adaptAPIProductToUI } from "@/utils/productAdapter";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
-// Sample products for different tabs
-const tabProducts = {
+// Sample products for different tabs (fallback)
+const tabProductsFallback = {
     "flash-sale": [
         {
             id: "fs1",
@@ -178,26 +182,88 @@ function ProductItem({ product }: ProductItemProps) {
 export default function ProductTabsSection() {
     const [activeTab, setActiveTab] = useState("flash-sale");
 
+    // Fetch products for each tab
+    // Flash Sale: Products with discounts, sorted by discount percentage
+    const { data: flashSaleData, isLoading: flashSaleLoading } = useProducts({ 
+        limit: 4, 
+        sortBy: 'createdAt',
+        order: 'desc',
+        status: 'active'
+    });
+
+    // Best Sellers: Products sorted by sales/views (using createdAt for now)
+    const { data: bestSellersData, isLoading: bestSellersLoading } = useProducts({ 
+        limit: 4, 
+        sortBy: 'createdAt',
+        order: 'desc',
+        status: 'active'
+    });
+
+    // Top Rated: Products sorted by average_rating
+    const { data: topRatedData, isLoading: topRatedLoading } = useProducts({ 
+        limit: 4, 
+        sortBy: 'average_rating',
+        order: 'desc',
+        status: 'active'
+    });
+
+    // New Arrival: Latest products
+    const { data: newArrivalData, isLoading: newArrivalLoading } = useProducts({ 
+        limit: 4, 
+        sortBy: 'createdAt',
+        order: 'desc',
+        status: 'active'
+    });
+
+    // Adapt products to UI format
+    const flashSaleProducts = flashSaleData?.data?.map(adaptAPIProductToUI).filter(p => p.originalPrice && p.originalPrice > p.price) || [];
+    const bestSellersProducts = bestSellersData?.data?.map(adaptAPIProductToUI) || [];
+    const topRatedProducts = topRatedData?.data?.map(adaptAPIProductToUI).filter(p => p.rating > 0) || [];
+    const newArrivalProducts = newArrivalData?.data?.map(adaptAPIProductToUI) || [];
+
+    // Create tab products object
+    const tabProducts = {
+        "flash-sale": flashSaleProducts.length > 0 ? flashSaleProducts : tabProductsFallback["flash-sale"],
+        "best-sellers": bestSellersProducts.length > 0 ? bestSellersProducts : tabProductsFallback["best-sellers"],
+        "top-rated": topRatedProducts.length > 0 ? topRatedProducts : tabProductsFallback["top-rated"],
+        "new-arrival": newArrivalProducts.length > 0 ? newArrivalProducts : tabProductsFallback["new-arrival"]
+    };
+
+    const loadingStates = {
+        "flash-sale": flashSaleLoading,
+        "best-sellers": bestSellersLoading,
+        "top-rated": topRatedLoading,
+        "new-arrival": newArrivalLoading
+    };
+
     return (
         <section className="py-16">
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                     {tabs.map((tab) => (
-                        <div key={tab.id} className="bg-card  overflow-hidden">
+                        <div key={tab.id} className="bg-card overflow-hidden">
                             {/* Tab Header */}
                             <div
-                                className={` text-primary-text p-4 pl-0 cursor-pointer transition-opacity hover:opacity-90`}
+                                className={`text-primary-text p-4 pl-0 cursor-pointer transition-opacity hover:opacity-90`}
                                 onClick={() => setActiveTab(tab.id)}
                             >
                                 <h3 className="font-semibold text-base text-left">{tab.label}</h3>
                             </div>
 
                             {/* Products List */}
-                            <div className="space-y-3.5">
-                                {tabProducts[tab.id as keyof typeof tabProducts]?.map((product) => (
-                                    <ProductItem key={product.id} product={product} />
-                                ))}
-                            </div>
+                            {loadingStates[tab.id as keyof typeof loadingStates] ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                </div>
+                            ) : (
+                                <div className="space-y-3.5">
+                                    {tabProducts[tab.id as keyof typeof tabProducts]?.slice(0, 4).map((product) => (
+                                        <Link key={product.id} href={`/products/${product.id}`}>
+                                            <ProductItem product={product} />
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

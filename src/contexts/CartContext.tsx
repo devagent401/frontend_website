@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
 export interface CartItem {
     id: string;
@@ -121,11 +121,31 @@ interface CartProviderProps {
 }
 
 export const CartProvider = ({ children }: CartProviderProps) => {
+    // Load cart from localStorage on mount
     const [state, dispatch] = useReducer(cartReducer, {
         items: [],
         total: 0,
         itemCount: 0
+    }, (initial) => {
+        if (typeof window !== 'undefined') {
+            const savedCart = localStorage.getItem('cart');
+            if (savedCart) {
+                try {
+                    return JSON.parse(savedCart);
+                } catch {
+                    return initial;
+                }
+            }
+        }
+        return initial;
     });
+
+    // Save cart to localStorage whenever it changes
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('cart', JSON.stringify(state));
+        }
+    }, [state]);
 
     const addItem = (item: CartItem) => {
         dispatch({ type: 'ADD_ITEM', payload: item });
@@ -141,6 +161,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
     const clearCart = () => {
         dispatch({ type: 'CLEAR_CART' });
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('cart');
+        }
     };
 
     return (

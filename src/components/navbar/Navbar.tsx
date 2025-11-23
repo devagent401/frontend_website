@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 import BottomNavigation from "./BottomNavigation";
 import CategoryDropdown from "./CategoryDropdown";
 import { NAVBAR_CONFIG } from "./JsonNavbarCategory";
+import { useSettings } from "@/hooks/useSettings";
+import Image from "next/image";
 
 
 export default function Navbar() {
@@ -19,6 +21,11 @@ export default function Navbar() {
     const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
     const { state } = useCart();
     const { isLoggedIn, user } = useAuth();
+
+    // Fetch dynamic settings
+    const { data: settingsData } = useSettings();
+    const systemName = settingsData?.systemName || NAVBAR_CONFIG.logo.text;
+    const logoUrl = settingsData?.logo;
 
     const toggleCategoryExpansion = (categoryId: string) => {
         setExpandedCategories(prev =>
@@ -47,10 +54,20 @@ export default function Navbar() {
                             href={NAVBAR_CONFIG.logo.href}
                             className="flex items-center gap-2 rounded-md px-2 py-1 text-lg font-bold text-primary-foreground hover:text-primary transition-colors"
                         >
-                            <span className="grid h-8 w-8 place-items-center rounded-md bg-primary-foreground text-primary text-sm font-bold">
-                                {NAVBAR_CONFIG.logo.shortText}
-                            </span>
-                            <span className="">{NAVBAR_CONFIG.logo.text}</span>
+                            {logoUrl ? (
+                                <Image
+                                    src={logoUrl}
+                                    alt={systemName}
+                                    width={32}
+                                    height={32}
+                                    className="rounded-md"
+                                />
+                            ) : (
+                                <span className="grid h-8 w-8 place-items-center rounded-md bg-primary-foreground text-primary text-sm font-bold">
+                                    {systemName.charAt(0)}
+                                </span>
+                            )}
+                            <span className="">{systemName}</span>
                         </Link>
                     </div>
 

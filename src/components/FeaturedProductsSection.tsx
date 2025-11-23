@@ -2,33 +2,56 @@
 
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
-import DealsProductsData from "../fakeData/bestDealData";
+import { useState, useMemo } from "react";
 import Button from "./shared/Button";
 import ProductCard from "./shared/cards/ProductCard";
-
-
-
-const productTabs = [
-    { id: "all", label: "All Product" },
-    { id: "smart-phone", label: "Smart Phone" },
-    { id: "laptop", label: "Laptop" },
-    { id: "headphone", label: "Headphone" },
-    { id: "tv", label: "TV" }
-];
+import { useFeaturedProducts } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
+import { adaptAPIProductsToUI } from "@/utils/productAdapter";
 
 export default function FeaturedProductsSection() {
     const [activeTab, setActiveTab] = useState("all");
-    const featuredProducts = DealsProductsData;
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    
+    // Fetch featured products
+    const { data: featuredProductsAPI = [], isLoading } = useFeaturedProducts(12);
+    
+    // Fetch categories for tabs
+    const { data: categoriesData } = useCategories({ flat: true });
+    const categories = categoriesData?.data || [];
+    
+    // Create tabs from categories (top 4 categories + All)
+    const productTabs = [
+        { id: "all", label: "All Product", categoryId: null },
+        ...categories.slice(0, 4).map(cat => ({
+            id: cat.slug,
+            label: cat.name,
+            categoryId: cat._id
+        }))
+    ];
+    
+    // Adapt API products to UI format
+    const featuredProducts = useMemo(() => {
+        return adaptAPIProductsToUI(featuredProductsAPI);
+    }, [featuredProductsAPI]);
+    
     // Filter products based on active tab
-    const filteredProducts = featuredProducts.filter(product => {
-        if (activeTab === "all") return true;
-        if (activeTab === "smart-phone") return product.category === "Smartphones";
-        if (activeTab === "laptop") return product.category === "Laptops";
-        if (activeTab === "headphone") return product.category === "Audio";
-        if (activeTab === "tv") return product.category === "TV & Home Theater";
-        return true;
-    });
+    const filteredProducts = useMemo(() => {
+        return featuredProducts.filter(product => {
+            if (activeTab === "all") return true;
+            if (selectedCategory) {
+                // Find the original API product to check category
+                const apiProduct = featuredProductsAPI.find(p => p._id === product.id);
+                if (apiProduct) {
+                    const productCategoryId = typeof apiProduct.category === 'string'
+                        ? apiProduct.category
+                        : apiProduct.category?._id;
+                    return productCategoryId === selectedCategory;
+                }
+            }
+            return true;
+        });
+    }, [featuredProducts, featuredProductsAPI, activeTab, selectedCategory]);
 
     return (
         <section className="py-16 px-6">
@@ -75,7 +98,10 @@ export default function FeaturedProductsSection() {
                                 {productTabs.map((tab) => (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
+                                        onClick={() => {
+                                            setActiveTab(tab.id);
+                                            setSelectedCategory(tab.categoryId);
+                                        }}
                                         className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${activeTab === tab.id
                                             ? 'border-primary text-primary'
                                             : 'border-transparent text-foreground/60 hover:text-foreground hover:border-foreground/20'
@@ -93,9 +119,19 @@ export default function FeaturedProductsSection() {
 
                         {/* Products Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {filteredProducts.slice(0, 6).map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
+                            {isLoading ? (
+                                <div className="col-span-full flex justify-center items-center py-12">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                                </div>
+                            ) : filteredProducts.length === 0 ? (
+                                <div className="col-span-full text-center py-12 text-foreground/60">
+                                    No products found
+                                </div>
+                            ) : (
+                                filteredProducts.slice(0, 6).map((product) => (
+                                    <ProductCard key={product.id} product={product} />
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { CartProvider } from "@/contexts/CartContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { QueryProvider } from "@/providers/QueryProvider";
 import TopNav from "@/components/topNav/TopNav";
 
 const geistSans = Geist({
@@ -33,18 +34,20 @@ export default function RootLayout({
       <body
         className={`overflow-hidden ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>
-          <AuthProvider>
-            <CartProvider>
-              <main className="max-h-screen overflow-y-auto ">
-                <TopNav />
-                <Navbar />
-                {children}
-                <Footer />
-              </main>
-            </CartProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <CartProvider>
+                <main className="max-h-screen overflow-y-auto ">
+                  <TopNav />
+                  <Navbar />
+                  {children}
+                  <Footer />
+                </main>
+              </CartProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
