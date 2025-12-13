@@ -3,11 +3,9 @@
 import { useCart } from "@/contexts/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import ProductOverview from "../../../app/products/[id]/components/ProductOverview";
-import Modal from "../Modal";
 import QuantitySelector from "../QuantitySelector";
 import Rating from "../Rating";
+import { useModalStore } from "@/stores/modalStore";
 
 export interface Product {
     id: string;
@@ -53,15 +51,14 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, className = "", rating = true, addToCart = true }: ProductCardProps) {
-    const { addItem, state } = useCart();
-    const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+    const { addItem } = useCart();
+    const { openQuickView } = useModalStore();
 
     const discountPercentage = product.originalPrice
         ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
         : 0;
 
     const handleAddToCart = (quantity: number) => {
-        console.log({ quantity });
         // Add item with the selected quantity
         addItem({
             id: product.id,
@@ -78,7 +75,6 @@ export default function ProductCard({ product, className = "", rating = true, ad
         new: "bg-success text-white",
         bestseller: "bg-warning text-black"
     };
-    console.log(state);
     return (
         <div className={`group bg-card border border-border rounded-xs overflow-hidden hover:shadow-lg transition-shadow duration-200 ${className}`}>
             <Link href={`/products/${product.id}`}>
@@ -116,7 +112,7 @@ export default function ProductCard({ product, className = "", rating = true, ad
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setIsQuickViewOpen(true);
+                                openQuickView(product);
                             }}
                         >
                             Quick View
@@ -158,16 +154,6 @@ export default function ProductCard({ product, className = "", rating = true, ad
                     <QuantitySelector onAddToCart={handleAddToCart} />
                 }
             </div>
-
-            {/* Quick View Modal */}
-            <Modal
-                isOpen={isQuickViewOpen}
-                onClose={() => setIsQuickViewOpen(false)}
-                size="xl"
-                title="Quick View"
-            >
-                <ProductOverview product={product} />
-            </Modal>
         </div>
     );
 }

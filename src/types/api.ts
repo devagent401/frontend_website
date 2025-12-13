@@ -108,6 +108,7 @@ export interface Product {
     gallery_images?: ProductImage[];
     publish: boolean;
     is_featured?: boolean;
+    is_todays_deal?: boolean;
     tags?: string[];
     discount?: {
         type: 'percent' | 'fixed';

@@ -1,33 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
 import { MoveRight } from "lucide-react";
-import CountdownTimer from "../shared/CountdownTimer";
-import FeaturedDealCard from "../shared/cards/FeaturedDealCard";
-import ProductCard from "../shared/cards/ProductCard";
-import { useProducts } from "@/hooks/useProducts";
-import { adaptAPIProductToUI } from "@/utils/productAdapter";
 import Link from "next/link";
+import CountdownTimer from "../shared/CountdownTimer";
+import ProductCard from "../shared/cards/ProductCard";
+import { useProductStore } from "@/stores/productStore";
+import FeaturedDealCard from "../shared/cards/FeaturedDealCard";
 
 export default function BestDealsSection() {
     // Set countdown to 24 hours from now
     const dealEndTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Fetch products with deals (products that have original_price > unit_price)
-    const { data: productsData, isLoading } = useProducts({
-        limit: 9,
-        sortBy: 'createdAt',
-        order: 'desc',
-        status: 'active'
-    });
+    // Use product store
+    const {
+        getTodaysDealProducts,
+        fetchProducts,
+        isLoading
+    } = useProductStore();
 
-    const products = productsData?.data?.map(adaptAPIProductToUI) || [];
+    // Initialize store on mount
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
-    // Filter products with discounts
-    const dealsProducts = products.filter(p => p.originalPrice && p.originalPrice > p.price);
-
-    // Use all products if no deals available
-    const displayProducts = dealsProducts.length > 0 ? dealsProducts : products;
-
+    // Get today's deal products (already in UI format)
+    const dealsProducts = getTodaysDealProducts();
     return (
         <section className="py-12 px-6 bg-muted/20">
             <div className="max-w-7xl mx-auto">
@@ -54,17 +52,17 @@ export default function BestDealsSection() {
                             </div>
                         ))}
                     </div>
-                ) : displayProducts.length > 0 ? (
+                ) : dealsProducts.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {/* Featured Deal Card */}
-                        {displayProducts[0] && (
+                        {dealsProducts[0] && (
                             <div className="col-span-4 xl:col-span-1">
-                                <FeaturedDealCard key={displayProducts[0].id} product={displayProducts[0]} />
+                                <FeaturedDealCard key={dealsProducts[0].id} product={dealsProducts[0]} />
                             </div>
                         )}
                         {/* Products Grid */}
                         <div className="col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {displayProducts.slice(0, 8).map((product) => (
+                            {dealsProducts.slice(0, 8).map((product) => (
                                 <ProductCard key={product.id} product={product} rating={false} addToCart={false} />
                             ))}
                         </div>
@@ -76,7 +74,7 @@ export default function BestDealsSection() {
                 )}
 
                 {/* View More Button */}
-                {!isLoading && displayProducts.length > 0 && (
+                {!isLoading && dealsProducts.length > 0 && (
                     <div className="text-center mt-8">
                         <Link href="/shop">
                             <button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold transition-colors">

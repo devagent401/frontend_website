@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { QueryProvider } from "@/providers/QueryProvider";
 import TopNav from "@/components/topNav/TopNav";
+import GlobalProductModal from "@/components/shared/GlobalProductModal";
+import StoreInitializer from "@/components/shared/StoreInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,12 +40,14 @@ export default function RootLayout({
           <ThemeProvider>
             <AuthProvider>
               <CartProvider>
+                <StoreInitializer />
                 <main className="max-h-screen overflow-y-auto ">
                   <TopNav />
                   <Navbar />
                   {children}
                   <Footer />
                 </main>
+                <GlobalProductModal />
               </CartProvider>
             </AuthProvider>
           </ThemeProvider>

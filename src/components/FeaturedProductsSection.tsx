@@ -2,56 +2,67 @@
 
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Button from "./shared/Button";
-import ProductCard from "./shared/cards/ProductCard";
-import { useFeaturedProducts } from "@/hooks/useProducts";
-import { useCategories } from "@/hooks/useCategories";
-import { adaptAPIProductsToUI } from "@/utils/productAdapter";
+import ProductCard, { Product } from "./shared/cards/ProductCard";
+import { useProductStore } from "@/stores/productStore";
+import { useCategoryStore } from "@/stores/categoryStore";
+import { Category } from "@/types/api";
 
 export default function FeaturedProductsSection() {
     const [activeTab, setActiveTab] = useState("all");
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-    
-    // Fetch featured products
-    const { data: featuredProductsAPI = [], isLoading } = useFeaturedProducts(12);
-    
-    // Fetch categories for tabs
-    const { data: categoriesData } = useCategories({ flat: true });
-    const categories = categoriesData?.data || [];
-    
+
+    // Use stores
+    const {
+        getFeaturedProducts,
+        fetchProducts,
+        isLoading: productsLoading,
+        getProductsByCategory
+    } = useProductStore();
+
+    const {
+        getCategories,
+        fetchCategories,
+        isLoading: categoriesLoading
+    } = useCategoryStore();
+
+    // Initialize stores on mount
+    useEffect(() => {
+        fetchProducts();
+        fetchCategories();
+    }, [fetchProducts, fetchCategories]);
+
+    // Get categories for tabs
+    const categories = getCategories();
+
     // Create tabs from categories (top 4 categories + All)
     const productTabs = [
         { id: "all", label: "All Product", categoryId: null },
-        ...categories.slice(0, 4).map(cat => ({
+        ...categories.slice(0, 4).map((cat: Category) => ({
             id: cat.slug,
             label: cat.name,
             categoryId: cat._id
         }))
     ];
-    
-    // Adapt API products to UI format
-    const featuredProducts = useMemo(() => {
-        return adaptAPIProductsToUI(featuredProductsAPI);
-    }, [featuredProductsAPI]);
-    
+
+    // Get featured products
+    const featuredProducts = getFeaturedProducts();
+
     // Filter products based on active tab
     const filteredProducts = useMemo(() => {
-        return featuredProducts.filter(product => {
-            if (activeTab === "all") return true;
-            if (selectedCategory) {
-                // Find the original API product to check category
-                const apiProduct = featuredProductsAPI.find(p => p._id === product.id);
-                if (apiProduct) {
-                    const productCategoryId = typeof apiProduct.category === 'string'
-                        ? apiProduct.category
-                        : apiProduct.category?._id;
-                    return productCategoryId === selectedCategory;
-                }
-            }
-            return true;
-        });
-    }, [featuredProducts, featuredProductsAPI, activeTab, selectedCategory]);
+        if (activeTab === "all") {
+            return featuredProducts;
+        }
+        if (selectedCategory) {
+            return getProductsByCategory(selectedCategory).filter((p: Product) =>
+                featuredProducts.some((fp: Product) => fp.id === p.id)
+            );
+        }
+        return featuredProducts;
+    }, [featuredProducts, activeTab, selectedCategory, getProductsByCategory]);
+
+    const isLoading = productsLoading || categoriesLoading;
 
     return (
         <section className="py-16 px-6">
@@ -128,7 +139,7 @@ export default function FeaturedProductsSection() {
                                     No products found
                                 </div>
                             ) : (
-                                filteredProducts.slice(0, 6).map((product) => (
+                                filteredProducts.slice(0, 6).map((product: Product) => (
                                     <ProductCard key={product.id} product={product} />
                                 ))
                             )}
