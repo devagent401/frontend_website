@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface OrderActivity {
     id: string;
@@ -96,8 +97,17 @@ const trackingSteps = [
 ];
 
 export default function TrackOrderPage() {
+    const searchParams = useSearchParams();
     const [orderNumber, setOrderNumber] = useState("");
-    const [trackingData, setTrackingData] = useState<TrackingData | null>(mockTrackingData);
+    const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
+
+    // Read orderNumber from URL params on mount
+    useEffect(() => {
+        const orderNumberParam = searchParams.get('orderNumber');
+        if (orderNumberParam) {
+            setOrderNumber(orderNumberParam);
+        }
+    }, [searchParams]);
 
     const handleTrackOrder = () => {
         // In a real app, this would make an API call

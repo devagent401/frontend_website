@@ -284,6 +284,11 @@ export interface CreateOrderInput {
     billingAddress?: Address;
     paymentMethod: string;
     notes?: string;
+    customerInfo?: {
+        name: string;
+        email: string;
+        phone?: string;
+    };
 }
 
 // ============================================================================
