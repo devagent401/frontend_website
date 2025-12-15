@@ -14,18 +14,9 @@ export default function FeaturedProductsSection() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
     // Use stores
-    const {
-        getFeaturedProducts,
-        fetchProducts,
-        isLoading: productsLoading,
-        getProductsByCategory
-    } = useProductStore();
+    const { getFeaturedProducts, fetchProducts, isLoading: productsLoading, getProductsByCategory } = useProductStore();
 
-    const {
-        getCategories,
-        fetchCategories,
-        isLoading: categoriesLoading
-    } = useCategoryStore();
+    const { getCategories, fetchCategories, isLoading: categoriesLoading } = useCategoryStore();
 
     // Initialize stores on mount
     useEffect(() => {
@@ -48,7 +39,6 @@ export default function FeaturedProductsSection() {
 
     // Get featured products
     const featuredProducts = getFeaturedProducts();
-
     // Filter products based on active tab
     const filteredProducts = useMemo(() => {
         if (activeTab === "all") {

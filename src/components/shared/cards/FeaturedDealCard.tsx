@@ -52,7 +52,7 @@ export default function FeaturedDealCard({ product, className = "" }: FeaturedDe
                     src={product.image}
                     alt={product.name}
                     fill
-                    className="object-contain"
+                    className="object-cover border border-blue-500"
                 />
             </div>
 

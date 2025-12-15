@@ -75,6 +75,7 @@ export default function ProductCard({ product, className = "", rating = true, ad
         new: "bg-success text-white",
         bestseller: "bg-warning text-black"
     };
+    console.log({ product })
     return (
         <div className={`group bg-card border border-border rounded-xs overflow-hidden hover:shadow-lg transition-shadow duration-200 ${className}`}>
             <Link href={`/products/${product.id}`}>

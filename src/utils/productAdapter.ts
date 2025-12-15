@@ -41,22 +41,15 @@ export interface UIProduct {
  * Convert API Product to UI Product format
  */
 export function adaptAPIProductToUI(apiProduct: APIProduct): UIProduct {
-  const originalPrice = apiProduct.discount 
-    ? apiProduct.unit_price 
-    : undefined;
-    
-  const price = apiProduct.discount
-    ? apiProduct.discount.type === 'percent'
-      ? apiProduct.unit_price * (1 - apiProduct.discount.value / 100)
-      : apiProduct.unit_price - apiProduct.discount.value
-    : apiProduct.unit_price;
+  const originalPrice = apiProduct.discount ? apiProduct.unit_price : undefined;
+
+  const price = apiProduct.discount ? apiProduct.discount.type === 'percent' ? apiProduct.unit_price * (1 - apiProduct.discount.value / 100)
+    : apiProduct.unit_price - (apiProduct.discount.value | 0) : apiProduct.unit_price;
 
   // Calculate discount badge
   let badge: UIProduct['badge'] | undefined;
   if (apiProduct.discount) {
-    const discountPercent = apiProduct.discount.type === 'percent'
-      ? apiProduct.discount.value
-      : ((apiProduct.discount.value / apiProduct.unit_price) * 100);
+    const discountPercent = apiProduct.discount.type === 'percent' ? apiProduct.discount.value : ((apiProduct.discount.value / apiProduct.unit_price) * 100);
     badge = {
       text: `${Math.round(discountPercent)}% OFF`,
       type: 'sale',
@@ -83,13 +76,9 @@ export function adaptAPIProductToUI(apiProduct: APIProduct): UIProduct {
     specifications[attr.name] = attr.value;
   });
 
-  const categoryName = typeof apiProduct.category === 'string'
-    ? apiProduct.category_snapshot?.name || 'Unknown'
-    : apiProduct.category?.name || 'Unknown';
+  const categoryName = typeof apiProduct.category === 'string' ? apiProduct.category_snapshot?.name || 'Unknown' : apiProduct.category?.name || 'Unknown';
 
-  const brandName = typeof apiProduct.brand === 'string'
-    ? apiProduct.brand_snapshot?.name
-    : apiProduct.brand?.name;
+  const brandName = typeof apiProduct.brand === 'string' ? apiProduct.brand_snapshot?.name : apiProduct.brand?.name;
 
   // Handle image URLs - ensure they're absolute URLs
   const getImageUrl = (url?: string) => {
@@ -104,9 +93,10 @@ export function adaptAPIProductToUI(apiProduct: APIProduct): UIProduct {
   };
 
   return {
+    ...apiProduct,
     id: apiProduct._id,
     name: apiProduct.name,
-    price,
+    price: Number(price),
     originalPrice,
     image: getImageUrl(apiProduct.thumbnail_image?.url),
     images: apiProduct.gallery_images?.map(img => getImageUrl(img.url)),
