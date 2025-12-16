@@ -38,6 +38,11 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isLoggedIn) {
+      alert('Please login to continue');
+      return;
+    }
+
     if (cart.items.length === 0) {
       alert('Your cart is empty');
       return;
@@ -46,7 +51,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      const orderPayload: any = {
+      const order = await createOrder.mutateAsync({
         items: cart.items.map(item => ({
           productId: item.id,
           quantity: item.quantity,
@@ -61,28 +66,10 @@ export default function CheckoutPage() {
         },
         paymentMethod: formData.paymentMethod === 'cash_on_delivery' ? 'cash' : formData.paymentMethod,
         notes: formData.notes,
-      };
-
-      // Include customerInfo for guest orders
-      if (!isLoggedIn) {
-        orderPayload.customerInfo = {
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email,
-          phone: formData.phone || undefined,
-        };
-      }
-
-      const order = await createOrder.mutateAsync(orderPayload);
+      });
 
       clearCart();
-
-      // Redirect based on login status
-      if (isLoggedIn) {
-        router.push(`/dashboard/order-history`);
-      } else {
-        // Redirect guest users to track order page with order number
-        router.push(`/dashboard/track-order?orderNumber=${order.orderNumber}`);
-      }
+      router.push(`/dashboard/order-history`);
       alert('Order placed successfully!');
     } catch (error: any) {
       alert(error.response?.data?.message || 'Failed to create order');

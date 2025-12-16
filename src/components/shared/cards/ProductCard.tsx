@@ -140,7 +140,7 @@ export default function ProductCard({ product, className = "", rating = true, ad
                         <span className="text-lg font-bold text-primary-light">
                             ${product.price}
                         </span>
-                        {product.originalPrice && (
+                        {product.originalPrice && product.originalPrice > product.price && (
                             <span className="text-sm text-foreground/50 line-through">
                                 ${product.originalPrice}
                             </span>
