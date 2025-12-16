@@ -10,28 +10,39 @@ import ProductMetadata from '@/components/shared/product/ProductMetadata';
 import ColorSelector from '@/components/shared/product/ColorSelector';
 import SizeSelector from '@/components/shared/product/SizeSelector';
 import MemoryStorageSelector from '@/components/shared/product/MemoryStorageSelector';
-import ProductQuantitySelector from '@/components/shared/product/ProductQuantitySelector';
-import ProductActionButtons from '@/components/shared/product/ProductActionButtons';
+import QuantitySelector from '@/components/shared/QuantitySelector';
 import ProductSecondaryActions from '@/components/shared/product/ProductSecondaryActions';
 
 export default function ProductOverview({ product }: { product: Product }) {
-    const { addItem } = useCart();
+    const { state, addItem, updateQuantity, removeItem } = useCart();
     const [selectedImage, setSelectedImage] = useState(0);
     const [selectedColor, setSelectedColor] = useState(0);
     const [selectedSize, setSelectedSize] = useState(0);
     const [selectedMemory, setSelectedMemory] = useState(0);
     const [selectedStorage, setSelectedStorage] = useState(0);
-    const [quantity, setQuantity] = useState(1);
 
-    const handleAddToCart = () => {
-        addItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product?.images?.[0] || product?.image || '',
-            maxQuantity: product?.quantity || 50,
-            quantity: quantity,
-        });
+    // Get current quantity from cart
+    const cartItem = state.items.find(item => item.id === product.id);
+    const currentCartQuantity = cartItem?.quantity || 0;
+
+    const handleAddToCart = (quantity: number) => {
+        if (quantity === 0) {
+            // Remove from cart
+            removeItem(product.id);
+        } else if (cartItem) {
+            // Update existing item quantity
+            updateQuantity(product.id, quantity);
+        } else {
+            // Add new item
+            addItem({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product?.images?.[0] || product?.image || '',
+                maxQuantity: product?.quantity || 50,
+                quantity: quantity,
+            });
+        }
     };
 
     const images = product?.images || (product?.image ? [product.image] : []);
@@ -98,25 +109,16 @@ export default function ProductOverview({ product }: { product: Product }) {
                         />
                     )}
 
-                {/* Quantity and Actions */}
-                <div className="space-y-4">
-                    {/* Quantity Selector */}
-                    <ProductQuantitySelector
-                        quantity={quantity}
-                        maxQuantity={product?.quantity || 50}
-                        onChange={setQuantity}
-                    />
-
-                    {/* Action Buttons */}
-                    <ProductActionButtons
-                        onAddToCart={handleAddToCart}
-                        disabled={!product?.inStock}
-                    />
-                </div>
+                {/* Quantity Selector with Add to Cart */}
+                <QuantitySelector
+                    onAddToCart={handleAddToCart}
+                    maxQuantity={product?.quantity || 50}
+                    initialQuantity={currentCartQuantity}
+                />
 
                 {/* Additional Actions */}
                 <ProductSecondaryActions
-                    onAddToCart={handleAddToCart}
+                    onAddToCart={() => handleAddToCart(1)}
                     onWishlist={() => { }}
                     onCompare={() => { }}
                     onShare={() => { }}

@@ -1,37 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Minus } from "lucide-react";
 import Button from "./Button";
 
 interface QuantitySelectorProps {
     onAddToCart: (quantity: number) => void;
     maxQuantity?: number;
+    initialQuantity?: number;
     className?: string;
 }
 
 export default function QuantitySelector({
     onAddToCart,
     maxQuantity = 10,
+    initialQuantity = 0,
     className = ""
 }: QuantitySelectorProps) {
-    const [quantity, setQuantity] = useState(0);
+    const [quantity, setQuantity] = useState(initialQuantity);
+
+    // Update quantity when initialQuantity changes (e.g., when cart updates)
+    useEffect(() => {
+        setQuantity(initialQuantity);
+    }, [initialQuantity]);
 
     const handleAddToCart = () => {
         if (quantity === 0) {
-            onAddToCart(1);
-            setQuantity(1);
+            const newQuantity = 1;
+            setQuantity(newQuantity);
+            onAddToCart(newQuantity);
         } else {
-            onAddToCart(0);
+            // If already in cart, clicking again removes it
             setQuantity(0);
+            onAddToCart(0);
         }
     };
 
     const handleQuantityChange = (change: number) => {
         const newQuantity = quantity + change;
         if (newQuantity >= 0 && newQuantity <= maxQuantity) {
-            onAddToCart(1);
             setQuantity(newQuantity);
+            onAddToCart(newQuantity);
         }
     };
 

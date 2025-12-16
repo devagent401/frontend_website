@@ -51,23 +51,35 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, className = "", rating = true, addToCart = true }: ProductCardProps) {
-    const { addItem } = useCart();
+    const { state, addItem, updateQuantity, removeItem } = useCart();
     const { openQuickView } = useModalStore();
 
     const discountPercentage = product.originalPrice
         ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
         : 0;
 
+    // Get current quantity from cart
+    const cartItem = state.items.find(item => item.id === product.id);
+    const currentCartQuantity = cartItem?.quantity || 0;
+
     const handleAddToCart = (quantity: number) => {
-        // Add item with the selected quantity
-        addItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            maxQuantity: 50, // Default max quantity
-            quantity: Number(quantity) // Pass the selected quantity
-        });
+        if (quantity === 0) {
+            // Remove from cart
+            removeItem(product.id);
+        } else if (cartItem) {
+            // Update existing item quantity
+            updateQuantity(product.id, quantity);
+        } else {
+            // Add new item
+            addItem({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                maxQuantity: product.quantity || 50,
+                quantity: Number(quantity)
+            });
+        }
     };
 
     const badgeColors = {
@@ -152,7 +164,11 @@ export default function ProductCard({ product, className = "", rating = true, ad
             {/* Add to Cart Button */}
             <div className="p-4 pt-0">
                 {addToCart &&
-                    <QuantitySelector onAddToCart={handleAddToCart} />
+                    <QuantitySelector
+                        onAddToCart={handleAddToCart}
+                        maxQuantity={product.quantity || 50}
+                        initialQuantity={currentCartQuantity}
+                    />
                 }
             </div>
         </div>
